@@ -27,35 +27,34 @@ struct input_event {
 	__s32 value;
 };
 """
+
 #EVENT_FORMAT = str('llHHi')
 #EVENT_SIZE = struct.calcsize(EVENT_FORMAT)
-FILENAME = '/dev/input/event10'
-mouse0 = evdev.InputDevice(FILENAME)
+#FILENAME = '/dev/input/event10'
 
-def main():
-	"""Just print out some event infomation when the mouse is used."""
+import argparse
+parser = argparse.ArgumentParser(description='Python quick test to evaluate 3dof position tracking in a 2D plane using 2 computer mice.')
+parser.add_argument('-r', '--right', default='/dev/input/event0', help='right mouse device node')
+parser.add_argument('-l', '--left', default='/dev/input/event1', help='left mouse device node')
+args = parser.parse_args()
+
+rightmouse = evdev.InputDevice(args.right)
+leftmouse = evdev.InputDevice(args.left)
+
+def parse_xyevents(mouse):
 	x = 0
 	y = 0
 	while 1:
-		event = mouse0.read_one()
+		event = mouse.read_one()
 		if(event):
-			print(evdev.util.categorize(event))
-			if(event.code == evdev.ecodes.SYN_REPORT):
-				print("mouse0 relative: ", x, y)
-				x = 0
-				y = 0
-			elif(event.code == evdev.ecodes.REL_X):
+			if(event.code == evdev.ecodes.REL_X):
 				x += event.value
-			elif(event.code == evdev.ecodes.REL_Y):
+			if(event.code == evdev.ecodes.REL_Y):
 				y += event.value
-			else:
-				print(evdev.util.categorize(event))
-
-
-
-
-
-
+			if(event.code == evdev.ecodes.SYN_REPORT):
+				break
+	return (x, y)
 
 if __name__ == "__main__":
-    main()
+	while 1:
+		print(parse_xyevents(leftmouse), parse_xyevents(rightmouse))
